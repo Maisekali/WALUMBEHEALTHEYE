@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>HEALTH EYE BY WALUMBE | Clinical Sentinel Dashboard</title>
+    <!-- Bootstrap 5 + Icons + Fonts + Charts -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,500;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 20% 30%, #0a0f1a, #010409);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #eef2ff;
+            padding-bottom: 2rem;
+        }
+
+        /* glassmorphic containers */
+        .glass-panel {
+            background: rgba(18, 25, 45, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .vital-card {
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            border: 1px solid #2d3a4e;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .vital-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 30px -12px rgba(0, 160, 255, 0.15);
+            border-color: #3b6e9f;
+        }
+
+        .danger-glow {
+            border: 1.5px solid #f85149;
+            background: rgba(248, 81, 73, 0.12);
+            box-shadow: 0 0 18px rgba(248, 81, 73, 0.5);
+            animation: pulse-red 1.2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); border-color: #f85149; }
+            70% { box-shadow: 0 0 0 12px rgba(248, 81, 73, 0); border-color: #ff7b72; }
+            100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
+        }
+
+        .vital-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e0f2fe, #7ab7ef);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+        .unit-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #8b9eb0;
+        }
+        .trend-icon {
+            font-size: 1rem;
+            margin-left: 6px;
+        }
+        .status-badge {
+            background: #1f2a3e;
+            padding: 0.25rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .alert-banner {
+            background: linear-gradient(95deg, #a1220a, #7a2e1f);
+            border-radius: 20px;
+            border-left: 6px solid #ffb347;
+        }
+        .table-custom {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 24px;
+            overflow: hidden;
+        }
+        .table-custom th {
+            border-bottom: 1px solid #2d3a4e;
+            color: #9cb3d0;
+            font-weight: 600;
+        }
+        .table-custom td {
+            color: #d1e2ff;
+            border-color: #253141;
+        }
+        .refresh-timer {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0e17;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+        .btn-neon {
+            background: transparent;
+            border: 1px solid #2f6e9e;
+            color: #b3e4ff;
+            border-radius: 40px;
+            transition: 0.2s;
+        }
+        .btn-neon:hover {
+            background: #1f4970;
+            color: white;
+            border-color: #58a6ff;
+            box-shadow: 0 0 8px #58a6ff;
+        }
+        .badge-critical {
+            background: #f85149;
+            color: white;
+            animation: softBlink 1s infinite;
+        }
+        @keyframes softBlink {
+            0% { opacity: 0.8; }
+            50% { opacity: 1; background: #ff6b62; }
+            100% { opacity: 0.8; }
+        }
+        .connection-led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            background: #2ea043;
+            box-shadow: 0 0 5px #2ea043;
+        }
+        footer {
+            font-size: 0.7rem;
+            color: #5e6f8d;
+        }
+        @media (max-width: 768px) {
+            .vital-value { font-size: 2.8rem; }
+            .glass-panel { padding: 1rem !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4 py-md-5">
+    <!-- Header with dynamic time & brand - HEALTH EYE BY WALUMBE -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-25">
+        <div>
+            <h1 class="display-6 fw-bold" style="background: linear-gradient(130deg, #fff, #5a9eff); background-clip: text; -webkit-background-clip: text; color: transparent;">
+                <i class="fas fa-eye me-2" style="color: #6effa8;"></i> HEALTH EYE BY WALUMBE
+            </h1>
+            <div class="d-flex gap-3 mt-1">
+                <span><i class="fas fa-network-wired me-1"></i> MaiseTech.Net.Unlimited</span>
+                <span><i class="fas fa-microchip me-1"></i> ESP32-S3 | Bed A-12</span>
+            </div>
+        </div>
+        <div class="mt-2 mt-md-0">
+            <div class="d-flex gap-2">
+                <button id="manualRefreshBtn" class="btn btn-neon btn-sm"><i class="fas fa-sync-alt me-1"></i> Sync now</button>
+                <button id="alertPermBtn" class="btn btn-outline-info btn-sm"><i class="fas fa-bell"></i> Enable alerts</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency banner (dynamic) -->
+    <div id="emergencyBanner" class="alert-banner p-3 mb-4 d-none align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+            <i class="fas fa-triangle-exclamation fa-2x text-warning"></i>
+            <div><strong class="fs-5">⚠️ CRITICAL EVENT ACTIVE</strong><br><span id="emergencyMsg">Patient parameters critical - immediate intervention required</span></div>
+        </div>
+        <i class="fas fa-waveform fa-2x opacity-75"></i>
+    </div>
+
+    <!-- Row 1: Vital signs + Status core -->
+    <div class="row g-4 mb-4">
+        <!-- Temperature Card -->
+        <div class="col-md-6 col-lg-4">
+            <div id="tempCard" class="vital-card p-4 h-100 text-center position-relative">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="status-badge"><i class="fas fa-thermometer-half me-1"></i> FIELD 1 · CORE</span>
+                    <i class="fas fa-chart-line text-info opacity-50"></i>
+                </div>
+                <div class="my-3">
+                    <div id="tempValue" class="vital-value">--.-</div>
+                    <div class="unit-text">°C · Celsius</div>
+                    <div id="tempTrend" class="small mt-2"><i class="fas fa-waveform"></i> <span id="tempStatusText">Nominal</span></div>
+                </div>
+                <div class="progress mx-2" style="height: 4px; background: #1f2a3e;">
+                    <div id="tempGauge" class="progress-bar bg-info" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heart Rate Card -->
+        <div class="col-md-6 col-lg-4">
+            <div id="hrCard" class="vital-card p-4 h-100 text-center">
+                <div class="d-flex justify-content-between align-items-start">
+                    <span class="status-badge"><i class="fas fa-heart me-1"></i> FIELD 2 · PULSE</span>
+                    <i class="fas fa-waveform text-danger opacity-50"></i>
+                </div>
+                <div class="my-3">
+                    <div id="hrValue" class="vital-value">--</div>
+                    <div class="unit-text">BPM · beats/min</div>
+                    <div id="hrTrend" class="small mt-2"><i class="fas fa-heartbeat"></i> <span id="hrStatusText">Monitoring</span></div>
+                </div>
+                <div class="progress mx-2" style="height: 4px; background: #1f2a3e;">
+                    <div id="hrGauge" class="progress-bar bg-danger" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Critical Status & AI Summary Card -->
+        <div class="col-md-12 col-lg-4">
+            <div class="vital-card p-4 h-100 glass-panel">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fas fa-shield-alt fs-4 text-warning"></i>
+                    <h5 class="mb-0 fw-semibold">Clinical alert hub</h5>
+                    <span id="liveConnLed" class="connection-led ms-auto"></span>
+                </div>
+                <div id="alertFlagDisplay" class="mb-2">
+                    <span class="badge bg-secondary"><i class="far fa-check-circle"></i> System nominal</span>
+                </div>
+                <div class="mt-2">
+                    <p class="small text-muted mb-1"><i class="fas fa-clock"></i> Last vitals update</p>
+                    <div id="lastUpdateTime" class="fw-semibold">—:—:—</div>
+                    <hr class="bg-secondary my-2">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-chart-simple"></i> AI Insight:</span>
+                        <span id="aiInsight" class="text-info fw-light">Awaiting data...</span>
+                    </div>
+                    <div class="mt-2 small text-secondary">
+                        <i class="fas fa-microphone-alt"></i> threshold alerts active
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Multi-trend Chart (replaces old iframe) -->
+    <div class="glass-panel p-3 p-md-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-info"></i>Real‑time trend analysis (last 20 readings)</h5>
+            <div class="refresh-timer mt-1 mt-sm-0"><i class="fas fa-sync-alt fa-fw"></i> Auto‑refresh: <span id="countdownSec">15</span>s</div>
+        </div>
+        <canvas id="vitalsChart" width="400" height="200" style="max-height: 360px; width: 100%;"></canvas>
+        <div class="text-end mt-2"><small class="text-secondary">Temp (°C) — Heart Rate (BPM) | dual axis</small></div>
+    </div>
+
+    <!-- Row 3: Recent events & history table -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="vital-card p-3">
+                <div class="d-flex gap-3 align-items-center mb-2">
+                    <i class="fas fa-table-list fs-5"></i>
+                    <h6 class="mb-0">Clinical event log · last 5 records</h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-hover align-middle mb-0">
+                        <thead>
+                            <tr><th>Timestamp</th><th>Temp (°C)</th><th>Heart Rate (BPM)</th><th>Alert flag</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr><td colspan="5" class="text-center text-muted">Loading stream...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 small d-flex justify-content-between">
+                    <span><i class="fas fa-database"></i> Data source: ThingSpeak CH:3336647</span>
+                    <span id="apiHealthBadge" class="text-success"><i class="fas fa-plug"></i> Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="text-center mt-5 pt-3 border-top border-secondary border-opacity-25">
+        <i class="fas fa-eye"></i> HEALTH EYE BY WALUMBE · MaiseTech HealthCore · HIPAA-ready simulation · Real‑time alerts & emergency readiness
+    </footer>
+</div>
+
+<script>
+    // ----- CONFIGURATION -----
+    const CHANNEL_ID = '3336647';
+    const API_BASE = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json`;
+    let refreshInterval = null;
+    let countdownTimer = null;
+    let countdownValue = 15;
+    let chartInstance = null;
+    
+    // state for preventing notification spam
+    let lastEmergencyState = false;
+    let lastThresholdAlertTrigger = false;
+    let lastTemp = null, lastHr = null;
+
+    // DOM elements
+    const tempValueDiv = document.getElementById('tempValue');
+    const hrValueDiv = document.getElementById('hrValue');
+    const tempCard = document.getElementById('tempCard');
+    const hrCard = document.getElementById('hrCard');
+    const alertFlagDisplay = document.getElementById('alertFlagDisplay');
+    const emergencyBanner = document.getElementById('emergencyBanner');
+    const emergencyMsgSpan = document.getElementById('emergencyMsg');
+    const lastUpdateSpan = document.getElementById('lastUpdateTime');
+    const aiInsightSpan = document.getElementById('aiInsight');
+    const countdownSpan = document.getElementById('countdownSec');
+    const historyTableBody = document.getElementById('historyTableBody');
+    const tempStatusSpan = document.getElementById('tempStatusText');
+    const hrStatusSpan = document.getElementById('hrStatusText');
+    const tempGauge = document.getElementById('tempGauge');
+    const hrGauge = document.getElementById('hrGauge');
+    
+    // Helper: format time
+    function formatTime(dateObj) {
+        if(!dateObj) return '--:--:--';
+        const d = new Date(dateObj);
+        return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    }
+
+    // Show local notification if granted
+    function sendNotification(title, body, tag = 'clinical') {
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/4228/4228704.png', tag });
+        }
+    }
+
+    // evaluate thresholds + update cards style & trends
+    function evaluateThresholds(temp, hr, alertFlagFromField) {
+        let tempWarning = false;
+        let hrWarning = false;
+        let insightMsg = '';
+
+        // Temp thresholds (normal 36.1-37.8)
+        if (temp < 35.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Critical hypothermia'; insightMsg = 'Severe hypothermia risk'; }
+        else if (temp > 39.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Critical hyperthermia'; insightMsg = 'High fever, intervention needed'; }
+        else if (temp > 38.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Fever (elevated)'; insightMsg = 'Fever monitoring'; }
+        else if (temp < 36.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Mild hypothermia'; insightMsg = 'Temperature below range'; }
+        else { tempStatusSpan.innerText = 'Normal range'; insightMsg = 'Vitals within standard limits'; }
+
+        // HR thresholds
+        if (hr > 130) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Severe tachycardia'; insightMsg = insightMsg || 'Tachycardia critical'; }
+        else if (hr > 110) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Tachycardia'; insightMsg = insightMsg || 'Elevated heart rate'; }
+        else if (hr < 50) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Bradycardia'; insightMsg = insightMsg || 'Low heart rate, monitor'; }
+        else if (hr < 60) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Mild bradycardia'; insightMsg = insightMsg || 'Below normal pulse'; }
+        else { hrStatusSpan.innerText = 'Stable rhythm'; }
+
+        // Progress gauge (temp mapping 33-42°C -> 0-100%)
+        let tempPercent = Math.min(100, Math.max(0, ((temp - 33) / 9) * 100));
+        tempGauge.style.width = `${tempPercent}%`;
+        let hrPercent = Math.min(100, Math.max(0, (hr / 180) * 100));
+        hrGauge.style.width = `${hrPercent}%`;
+        
+        // color handling
+        if (tempWarning) tempCard.classList.add('danger-glow'); else tempCard.classList.remove('danger-glow');
+        if (hrWarning) hrCard.classList.add('danger-glow'); else hrCard.classList.remove('danger-glow');
+        
+        // AI insight summary priority (override with alert flag)
+        if (alertFlagFromField === 1) insightMsg = '⚠️ SYSTEM CRITICAL: Immediate emergency response required!';
+        else if (tempWarning && hrWarning) insightMsg = '❗ Dual vital signs critical - STAT call';
+        else if (tempWarning) insightMsg = `Temperature abnormal: ${temp.toFixed(1)}°C`;
+        else if (hrWarning) insightMsg = `Heart rate abnormal: ${hr} BPM`;
+        else insightMsg = 'Stable – continuous monitoring';
+        
+        aiInsightSpan.innerText = insightMsg;
+        
+        const overallCritical = (tempWarning || hrWarning || alertFlagFromField === 1);
+        return { overallCritical, tempWarning, hrWarning };
+    }
+
+    // Update table with latest readings (max 5)
+    function updateHistoryTable(feedsArray) {
+        if (!feedsArray || feedsArray.length === 0) {
+            historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No historical data</td></tr>';
+            return;
+        }
+        const latestFeeds = feedsArray.slice(-5).reverse();
+        let rowsHtml = '';
+        for (let feed of latestFeeds) {
+            const timeStr = formatTime(feed.created_at);
+            const t = feed.field1 ? parseFloat(feed.field1).toFixed(1) : '—';
+            const hr = feed.field2 ? parseInt(feed.field2) : '—';
+            const alertFlag = feed.field3 ? parseInt(feed.field3) : 0;
+            const statusIcon = (alertFlag === 1) ? '<span class="badge bg-danger">CRITICAL</span>' : '<span class="badge bg-secondary">Normal</span>';
+            rowsHtml += `<tr><td class="small">${timeStr}</td><td>${t}</td><td>${hr}</td><td>${alertFlag === 1 ? '⚠️ Alert 1' : '—'}</td><td>${statusIcon}</td></tr>`;
+        }
+        historyTableBody.innerHTML = rowsHtml;
+    }
+
+    // Render/update chart with full dataset (last 20 feeds)
+    function updateChart(feedsList) {
+        if (!feedsList || feedsList.length === 0) return;
+        const sorted = [...feedsList].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+        const labels = sorted.map(f => {
+            const d = new Date(f.created_at);
+            return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+        });
+        const tempData = sorted.map(f => f.field1 ? parseFloat(f.field1) : null);
+        const hrData = sorted.map(f => f.field2 ? parseInt(f.field2) : null);
+        
+        if (chartInstance) {
+            chartInstance.data.labels = labels;
+            chartInstance.data.datasets[0].data = tempData;
+            chartInstance.data.datasets[1].data = hrData;
+            chartInstance.update('none');
+        } else {
+            const ctx = document.getElementById('vitalsChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: tempData,
+                            borderColor: '#58a6ff',
+                            backgroundColor: 'rgba(88, 166, 255, 0.05)',
+                            borderWidth: 3,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#7ab3e6',
+                            tension: 0.2,
+                            yAxisID: 'y',
+                        },
+                        {
+                            label: 'Heart Rate (BPM)',
+                            data: hrData,
+                            borderColor: '#ff7b72',
+                            backgroundColor: 'rgba(255, 90, 70, 0.02)',
+                            borderWidth: 3,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#ff9f8f',
+                            tension: 0.2,
+                            yAxisID: 'y1',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        tooltip: { mode: 'index', intersect: false, backgroundColor: '#0d1b2a' },
+                        legend: { labels: { color: '#cbd5e6', font: { size: 11 } }, position: 'top' },
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'Temperature °C', color: '#9bb7e0' }, grid: { color: '#1f2a3e' }, ticks: { color: '#b9d0f0' } },
+                        y1: { position: 'right', title: { display: true, text: 'Heart Rate (BPM)', color: '#ffaa99' }, grid: { drawOnChartArea: false }, ticks: { color: '#ffb7a8' } },
+                        x: { ticks: { color: '#a0bbdf', maxRotation: 30, autoSkip: true }, grid: { color: '#1f2a3e' } }
+                    }
+                }
+            });
+        }
+    }
+
+    // main fetch data from ThingSpeak (feeds.json?results=20)
+    async function fetchClinicalData() {
+        try {
+            const url = `${API_BASE}?results=20`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const feeds = data.feeds;
+            if (!feeds || feeds.length === 0) throw new Error('No feeds');
+            
+            const latest = feeds[feeds.length - 1];
+            const temp = latest.field1 ? parseFloat(latest.field1) : 0;
+            const hr = latest.field2 ? parseInt(latest.field2) : 0;
+            const alertFlag = latest.field3 ? parseInt(latest.field3) : 0;
+            
+            // update numeric display
+            tempValueDiv.innerText = temp.toFixed(1);
+            hrValueDiv.innerText = hr;
+            // update last update timestamp
+            if (latest.created_at) lastUpdateSpan.innerText = formatTime(latest.created_at);
+            else lastUpdateSpan.innerText = new Date().toLocaleTimeString();
+            
+            // evaluate thresholds + visual glow (alertFlag from field3 considered)
+            const { overallCritical } = evaluateThresholds(temp, hr, alertFlag);
+            
+            // Emergency banner & notifications logic based on field3 or critical thresholds
+            let emergencyActive = (alertFlag === 1) || overallCritical;
+            if (emergencyActive) {
+                emergencyBanner.classList.remove('d-none');
+                if (alertFlag === 1) emergencyMsgSpan.innerText = `🚨 CODE RED: Alert field3 triggered | Temp ${temp.toFixed(1)}°C | HR ${hr} BPM`;
+                else emergencyMsgSpan.innerText = `⚠️ Critical thresholds exceeded: Temp ${temp.toFixed(1)}°C / HR ${hr} BPM – clinical review required`;
+                // update badge
+                alertFlagDisplay.innerHTML = '<span class="badge badge-critical"><i class="fas fa-skull-crosswalk"></i> EMERGENCY MODE ACTIVE</span>';
+                // trigger notifications only on state change
+                if (!lastEmergencyState) {
+                    if (Notification.permission === "granted") {
+                        sendNotification('🚨 HEALTH EYE ALERT', `Patient unstable: ${temp.toFixed(1)}°C, ${hr} BPM. Immediate attention.`);
+                    }
+                }
+                lastEmergencyState = true;
+            } else {
+                emergencyBanner.classList.add('d-none');
+                alertFlagDisplay.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-check-circle"></i> Stable - No active emergency</span>';
+                lastEmergencyState = false;
+            }
+            
+            // Update history table and chart with full feeds
+            updateHistoryTable(feeds);
+            updateChart(feeds);
+            
+            // Additional alerts for thresholds crossing (single shot per crossing)
+            const thresholdCritical = (temp > 38.5 || temp < 35.0 || hr > 125 || hr < 48);
+            if (thresholdCritical && !lastThresholdAlertTrigger && !emergencyActive) {
+                if (Notification.permission === "granted") {
+                    sendNotification('Clinical threshold warning', `Vitals out of range: T=${temp.toFixed(1)}°C / HR=${hr} bpm`, 'threshold');
+                }
+                lastThresholdAlertTrigger = true;
+            } else if (!thresholdCritical) {
+                lastThresholdAlertTrigger = false;
+            }
+            
+            // update connection led & api health
+            document.getElementById('apiHealthBadge').innerHTML = '<i class="fas fa-check-circle text-success"></i> Synced';
+            document.getElementById('liveConnLed').style.background = '#2ea043';
+        } catch (err) {
+            console.warn("ThingSpeak fetch error", err);
+            document.getElementById('apiHealthBadge').innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Retrying';
+            document.getElementById('liveConnLed').style.background = '#e3b341';
+            // keep previous values but show warning
+            aiInsightSpan.innerText = 'Network latency / awaiting data';
+        }
+    }
+    
+    // countdown and cyclic refresh
+    function startRefreshCycle() {
+        if (refreshInterval) clearInterval(refreshInterval);
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownValue = 15;
+        countdownSpan.innerText = countdownValue;
+        const updateCountdown = () => {
+            countdownValue--;
+            if (countdownValue <= 0) {
+                countdownValue = 15;
+                fetchClinicalData();
+            }
+            countdownSpan.innerText = countdownValue;
+        };
+        countdownTimer = setInterval(updateCountdown, 1000);
+        refreshInterval = setInterval(() => {
+            // extra sync: keep data fresh, but countdown triggers main fetch as well 
+            // avoid double, but countdown will call fetch anyway. So we just keep as backup: 
+        }, 15000);
+        fetchClinicalData(); // initial load
+    }
+    
+    // manual refresh
+    function manualRefresh() {
+        fetchClinicalData();
+        countdownValue = 15;
+        countdownSpan.innerText = countdownValue;
+        if (Notification.permission !== "granted") console.log('manual refresh triggered');
+    }
+    
+    // request notification permission & button
+    function requestNotificationPerm() {
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission().then(perm => {
+                if (perm === 'granted') sendNotification('HEALTH EYE BY WALUMBE', 'Notifications active – you will receive critical alerts');
+            });
+        } else {
+            sendNotification('HEALTH EYE BY WALUMBE', 'Alerts already enabled');
+        }
+    }
+    
+    // initial chart placeholder, start timers, event listeners
+    window.addEventListener('load', () => {
+        startRefreshCycle();
+        document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
+        document.getElementById('alertPermBtn').addEventListener('click', requestNotificationPerm);
+        // pre-check notification permission
+        if (Notification.permission === 'default') {
+            // we don't annoy user, just set button visible.
+        }
+    });
+</script>
+</body>
+</html>
