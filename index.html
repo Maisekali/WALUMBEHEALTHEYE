@@ -1,38 +1,33 @@
+Here is a professional clinical dashboard with real‑time monitoring, push notifications, and automatic email alerts when temperature (31–38°C) or heart rate (60–100 BPM) thresholds are violated.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>HEALTH EYE BY WALUMBE | Clinical Sentinel Dashboard</title>
+    <title>HEALTH EYE PRO | Clinical Sentinel Dashboard</title>
     <!-- Bootstrap 5 + Icons + Fonts + Charts -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,500;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- EmailJS SDK for real email alerts -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: radial-gradient(circle at 20% 30%, #0a0f1a, #010409);
             font-family: 'Inter', 'Segoe UI', sans-serif;
             color: #eef2ff;
             padding-bottom: 2rem;
         }
-
-        /* glassmorphic containers */
         .glass-panel {
             background: rgba(18, 25, 45, 0.65);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(88, 166, 255, 0.2);
             border-radius: 32px;
             box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
-            transition: all 0.2s ease;
         }
-
         .vital-card {
             background: rgba(13, 17, 23, 0.85);
             backdrop-filter: blur(4px);
@@ -45,20 +40,17 @@
             box-shadow: 0 20px 30px -12px rgba(0, 160, 255, 0.15);
             border-color: #3b6e9f;
         }
-
         .danger-glow {
             border: 1.5px solid #f85149;
             background: rgba(248, 81, 73, 0.12);
             box-shadow: 0 0 18px rgba(248, 81, 73, 0.5);
             animation: pulse-red 1.2s infinite;
         }
-
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); border-color: #f85149; }
             70% { box-shadow: 0 0 0 12px rgba(248, 81, 73, 0); border-color: #ff7b72; }
             100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0); }
         }
-
         .vital-value {
             font-size: 4.5rem;
             font-weight: 800;
@@ -67,24 +59,14 @@
             -webkit-background-clip: text;
             color: transparent;
             letter-spacing: -1px;
-            line-height: 1.2;
         }
-        .unit-text {
-            font-size: 1.2rem;
-            font-weight: 500;
-            color: #8b9eb0;
-        }
-        .trend-icon {
-            font-size: 1rem;
-            margin-left: 6px;
-        }
+        .unit-text { font-size: 1.2rem; font-weight: 500; color: #8b9eb0; }
         .status-badge {
             background: #1f2a3e;
             padding: 0.25rem 0.9rem;
             border-radius: 40px;
             font-size: 0.75rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
         }
         .alert-banner {
             background: linear-gradient(95deg, #a1220a, #7a2e1f);
@@ -96,15 +78,8 @@
             border-radius: 24px;
             overflow: hidden;
         }
-        .table-custom th {
-            border-bottom: 1px solid #2d3a4e;
-            color: #9cb3d0;
-            font-weight: 600;
-        }
-        .table-custom td {
-            color: #d1e2ff;
-            border-color: #253141;
-        }
+        .table-custom th { border-bottom: 1px solid #2d3a4e; color: #9cb3d0; font-weight: 600; }
+        .table-custom td { color: #d1e2ff; border-color: #253141; }
         .refresh-timer {
             font-family: 'JetBrains Mono', monospace;
             background: #0a0e17;
@@ -143,10 +118,15 @@
             background: #2ea043;
             box-shadow: 0 0 5px #2ea043;
         }
-        footer {
+        .range-hint {
             font-size: 0.7rem;
-            color: #5e6f8d;
+            background: rgba(0,0,0,0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            display: inline-block;
         }
+        .email-status { font-size: 0.7rem; cursor: pointer; }
+        footer { font-size: 0.7rem; color: #5e6f8d; }
         @media (max-width: 768px) {
             .vital-value { font-size: 2.8rem; }
             .glass-panel { padding: 1rem !important; }
@@ -156,49 +136,55 @@
 <body>
 
 <div class="container py-4 py-md-5">
-    <!-- Header with dynamic time & brand - HEALTH EYE BY WALUMBE -->
+    <!-- Header -->
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary border-opacity-25">
         <div>
             <h1 class="display-6 fw-bold" style="background: linear-gradient(130deg, #fff, #5a9eff); background-clip: text; -webkit-background-clip: text; color: transparent;">
-                <i class="fas fa-eye me-2" style="color: #6effa8;"></i> HEALTH EYE BY WALUMBE
+                <i class="fas fa-eye me-2" style="color: #6effa8;"></i> HEALTH EYE PRO | WALUMBE
             </h1>
-            <div class="d-flex gap-3 mt-1">
-                <span><i class="fas fa-network-wired me-1"></i> MaiseTech.Net.Unlimited</span>
+            <div class="d-flex gap-3 mt-1 flex-wrap">
+                <span><i class="fas fa-network-wired me-1"></i> MaiseTech Core</span>
                 <span><i class="fas fa-microchip me-1"></i> ESP32-S3 | Bed A-12</span>
+                <span class="range-hint"><i class="fas fa-thermometer-half"></i> Temp norm: 31–38°C</span>
+                <span class="range-hint"><i class="fas fa-heartbeat"></i> HR norm: 60–100 BPM</span>
             </div>
         </div>
         <div class="mt-2 mt-md-0">
             <div class="d-flex gap-2">
                 <button id="manualRefreshBtn" class="btn btn-neon btn-sm"><i class="fas fa-sync-alt me-1"></i> Sync now</button>
                 <button id="alertPermBtn" class="btn btn-outline-info btn-sm"><i class="fas fa-bell"></i> Enable alerts</button>
+                <button id="testEmailBtn" class="btn btn-outline-warning btn-sm" title="Test email configuration"><i class="fas fa-envelope"></i> Test email</button>
             </div>
         </div>
     </div>
 
-    <!-- Emergency banner (dynamic) -->
+    <!-- Emergency banner -->
     <div id="emergencyBanner" class="alert-banner p-3 mb-4 d-none align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-3">
             <i class="fas fa-triangle-exclamation fa-2x text-warning"></i>
-            <div><strong class="fs-5">⚠️ CRITICAL EVENT ACTIVE</strong><br><span id="emergencyMsg">Patient parameters critical - immediate intervention required</span></div>
+            <div><strong class="fs-5">🚨 CRITICAL EVENT ACTIVE</strong><br><span id="emergencyMsg">Parameter outside safe clinical range</span></div>
         </div>
         <i class="fas fa-waveform fa-2x opacity-75"></i>
     </div>
 
-    <!-- Row 1: Vital signs + Status core -->
+    <!-- Row 1: Vital cards -->
     <div class="row g-4 mb-4">
         <!-- Temperature Card -->
         <div class="col-md-6 col-lg-4">
-            <div id="tempCard" class="vital-card p-4 h-100 text-center position-relative">
+            <div id="tempCard" class="vital-card p-4 h-100 text-center">
                 <div class="d-flex justify-content-between align-items-start">
-                    <span class="status-badge"><i class="fas fa-thermometer-half me-1"></i> FIELD 1 · CORE</span>
+                    <span class="status-badge"><i class="fas fa-thermometer-half me-1"></i> FIELD 1 · CORE TEMP</span>
                     <i class="fas fa-chart-line text-info opacity-50"></i>
                 </div>
                 <div class="my-3">
                     <div id="tempValue" class="vital-value">--.-</div>
                     <div class="unit-text">°C · Celsius</div>
-                    <div id="tempTrend" class="small mt-2"><i class="fas fa-waveform"></i> <span id="tempStatusText">Nominal</span></div>
+                    <div id="tempTrend" class="small mt-2"><i class="fas fa-waveform"></i> <span id="tempStatusText">Awaiting data</span></div>
                 </div>
-                <div class="progress mx-2" style="height: 4px; background: #1f2a3e;">
+                <div class="d-flex justify-content-between small text-secondary px-1 mb-1">
+                    <span>⚠️ &lt;31°C</span><span>✅ 31–38°C</span><span>⚠️ &gt;38°C</span>
+                </div>
+                <div class="progress mx-2" style="height: 6px; background: #1f2a3e;">
                     <div id="tempGauge" class="progress-bar bg-info" style="width: 0%"></div>
                 </div>
             </div>
@@ -208,7 +194,7 @@
         <div class="col-md-6 col-lg-4">
             <div id="hrCard" class="vital-card p-4 h-100 text-center">
                 <div class="d-flex justify-content-between align-items-start">
-                    <span class="status-badge"><i class="fas fa-heart me-1"></i> FIELD 2 · PULSE</span>
+                    <span class="status-badge"><i class="fas fa-heart me-1"></i> FIELD 2 · PULSE RATE</span>
                     <i class="fas fa-waveform text-danger opacity-50"></i>
                 </div>
                 <div class="my-3">
@@ -216,13 +202,16 @@
                     <div class="unit-text">BPM · beats/min</div>
                     <div id="hrTrend" class="small mt-2"><i class="fas fa-heartbeat"></i> <span id="hrStatusText">Monitoring</span></div>
                 </div>
-                <div class="progress mx-2" style="height: 4px; background: #1f2a3e;">
+                <div class="d-flex justify-content-between small text-secondary px-1 mb-1">
+                    <span>⚠️ &lt;60</span><span>✅ 60–100</span><span>⚠️ &gt;100</span>
+                </div>
+                <div class="progress mx-2" style="height: 6px; background: #1f2a3e;">
                     <div id="hrGauge" class="progress-bar bg-danger" style="width: 0%"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Critical Status & AI Summary Card -->
+        <!-- Clinical Alert Hub -->
         <div class="col-md-12 col-lg-4">
             <div class="vital-card p-4 h-100 glass-panel">
                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -238,28 +227,28 @@
                     <div id="lastUpdateTime" class="fw-semibold">—:—:—</div>
                     <hr class="bg-secondary my-2">
                     <div class="d-flex justify-content-between">
-                        <span><i class="fas fa-chart-simple"></i> AI Insight:</span>
+                        <span><i class="fas fa-chart-simple"></i> AI Clinical Insight:</span>
                         <span id="aiInsight" class="text-info fw-light">Awaiting data...</span>
                     </div>
                     <div class="mt-2 small text-secondary">
-                        <i class="fas fa-microphone-alt"></i> threshold alerts active
+                        <i class="fas fa-envelope"></i> Email alerts: <span id="emailStatusIcon" class="text-info">ontieribrayoo@gmail.com</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Row 2: Multi-trend Chart (replaces old iframe) -->
+    <!-- Chart panel -->
     <div class="glass-panel p-3 p-md-4 mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
             <h5 class="mb-0"><i class="fas fa-chart-line me-2 text-info"></i>Real‑time trend analysis (last 20 readings)</h5>
             <div class="refresh-timer mt-1 mt-sm-0"><i class="fas fa-sync-alt fa-fw"></i> Auto‑refresh: <span id="countdownSec">15</span>s</div>
         </div>
         <canvas id="vitalsChart" width="400" height="200" style="max-height: 360px; width: 100%;"></canvas>
-        <div class="text-end mt-2"><small class="text-secondary">Temp (°C) — Heart Rate (BPM) | dual axis</small></div>
+        <div class="text-end mt-2"><small class="text-secondary">Temp (°C) safe 31-38 | HR (BPM) safe 60-100 | dual axis</small></div>
     </div>
 
-    <!-- Row 3: Recent events & history table -->
+    <!-- History table -->
     <div class="row g-4">
         <div class="col-12">
             <div class="vital-card p-3">
@@ -270,7 +259,7 @@
                 <div class="table-responsive">
                     <table class="table table-custom table-hover align-middle mb-0">
                         <thead>
-                            <tr><th>Timestamp</th><th>Temp (°C)</th><th>Heart Rate (BPM)</th><th>Alert flag</th><th>Status</th></tr>
+                            <tr><th>Timestamp</th><th>Temp (°C)</th><th>Heart Rate (BPM)</th><th>Alert flag</th><th>Status (threshold)</th></tr>
                         </thead>
                         <tbody id="historyTableBody">
                             <tr><td colspan="5" class="text-center text-muted">Loading stream...</td></tr>
@@ -278,31 +267,120 @@
                     </table>
                 </div>
                 <div class="mt-3 small d-flex justify-content-between">
-                    <span><i class="fas fa-database"></i> Data source: ThingSpeak CH:3336647</span>
+                    <span><i class="fas fa-database"></i> ThingSpeak CH:3336647</span>
                     <span id="apiHealthBadge" class="text-success"><i class="fas fa-plug"></i> Active</span>
                 </div>
             </div>
         </div>
     </div>
     <footer class="text-center mt-5 pt-3 border-top border-secondary border-opacity-25">
-        <i class="fas fa-eye"></i> HEALTH EYE BY WALUMBE · MaiseTech HealthCore · HIPAA-ready simulation · Real‑time alerts & emergency readiness
+        <i class="fas fa-eye"></i> HEALTH EYE PRO · WALUMBE · Thresholds: Temp 31-38°C, HR 60-100 BPM · Email alerts to ontieribrayoo@gmail.com
     </footer>
 </div>
 
 <script>
-    // ----- CONFIGURATION -----
+    // ======================== EMAILJS CONFIGURATION ========================
+    // To enable real email sending, sign up at https://www.emailjs.com/ (free), create a service (Gmail, etc.),
+    // create an email template with variables {{temp}}, {{hr}}, {{alertMsg}}, {{time}}.
+    // Then replace the placeholders below with your Public Key, Service ID, Template ID.
+    // This demo includes a test button and fallback console log + UI notification if credentials missing.
+    // Email sending is triggered automatically when ANY threshold is violated (temp outside 31-38 OR hr outside 60-100 OR field3 = 1)
+    // with cooldown (60 seconds) to avoid spam.
+    
+    // ---------- EMAILJS CREDENTIALS (REPLACE WITH YOUR OWN) ----------
+    const EMAILJS_CONFIG = {
+        PUBLIC_KEY: "YOUR_EMAILJS_PUBLIC_KEY",   // replace with your EmailJS public key
+        SERVICE_ID: "service_your_service_id",  // replace with your EmailJS service ID
+        TEMPLATE_ID: "template_your_template_id" // replace with your EmailJS template ID
+    };
+    let emailConfigured = false;
+    
+    // Initialize EmailJS if public key is provided (not placeholder)
+    if (EMAILJS_CONFIG.PUBLIC_KEY && EMAILJS_CONFIG.PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY") {
+        emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
+        emailConfigured = true;
+        console.log("✅ EmailJS initialized. Email alerts will be sent.");
+    } else {
+        console.warn("⚠️ EmailJS not configured. Please set your EmailJS credentials in the script. Emails will be simulated in console.");
+    }
+    
+    // Cooldown to avoid email flooding (60 seconds between emails for same violation state)
+    let lastEmailSentTime = 0;
+    const EMAIL_COOLDOWN_MS = 60000;
+    
+    // Function to send email using EmailJS
+    async function sendThresholdAlertEmail(temp, hr, alertFlag, violationReason) {
+        const now = Date.now();
+        if (now - lastEmailSentTime < EMAIL_COOLDOWN_MS) {
+            console.log("⏳ Email cooldown active, skipping to avoid spam.");
+            return false;
+        }
+        
+        const timeStr = new Date().toLocaleString();
+        let alertMsg = "";
+        if (alertFlag === 1) alertMsg = "🚨 CRITICAL: Hardware alert flag (field3=1)";
+        else if (violationReason.includes("Temp")) alertMsg = `🌡️ Temperature violation: ${temp.toFixed(1)}°C (safe range 31-38°C)`;
+        else if (violationReason.includes("HR")) alertMsg = `💓 Heart rate violation: ${hr} BPM (safe range 60-100)`;
+        else alertMsg = violationReason;
+        
+        const emailParams = {
+            to_email: "ontieribrayoo@gmail.com",
+            temp: temp.toFixed(1),
+            heart_rate: hr,
+            alert_message: alertMsg,
+            timestamp: timeStr,
+            patient_id: "Bed A-12"
+        };
+        
+        if (emailConfigured) {
+            try {
+                const response = await emailjs.send(
+                    EMAILJS_CONFIG.SERVICE_ID,
+                    EMAILJS_CONFIG.TEMPLATE_ID,
+                    emailParams
+                );
+                console.log("✅ Email sent successfully!", response);
+                lastEmailSentTime = now;
+                // Show temporary UI notification
+                showToastMessage("📧 Alert email sent to ontieribrayoo@gmail.com", "success");
+                return true;
+            } catch (error) {
+                console.error("❌ Email sending failed:", error);
+                showToastMessage("Email failed: check console & EmailJS config", "danger");
+                return false;
+            }
+        } else {
+            // Simulation mode: log to console and show alert
+            console.log("📧 SIMULATED EMAIL (EmailJS not configured):", emailParams);
+            showToastMessage("⚠️ SIMULATION: Email would be sent to ontieribrayoo@gmail.com (configure EmailJS)", "warning");
+            lastEmailSentTime = now;
+            return false;
+        }
+    }
+    
+    // Simple toast / temporary banner for email status
+    function showToastMessage(msg, type = "info") {
+        const toastDiv = document.createElement("div");
+        toastDiv.className = `alert alert-${type === "success" ? "success" : type === "danger" ? "danger" : "warning"} position-fixed top-0 end-0 m-3 p-2 small`;
+        toastDiv.style.zIndex = 9999;
+        toastDiv.style.background = "#1a1f2e";
+        toastDiv.style.color = "#fff";
+        toastDiv.style.borderLeft = `4px solid ${type === "success" ? "#2ea043" : "#f85149"}`;
+        toastDiv.innerHTML = `<i class="fas fa-envelope me-1"></i> ${msg}`;
+        document.body.appendChild(toastDiv);
+        setTimeout(() => toastDiv.remove(), 4000);
+    }
+    
+    // ======================== THINGSPEAK & DASHBOARD LOGIC ========================
     const CHANNEL_ID = '3336647';
     const API_BASE = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json`;
-    let refreshInterval = null;
-    let countdownTimer = null;
+    let refreshInterval = null, countdownTimer = null;
     let countdownValue = 15;
     let chartInstance = null;
-    
-    // state for preventing notification spam
     let lastEmergencyState = false;
-    let lastThresholdAlertTrigger = false;
-    let lastTemp = null, lastHr = null;
-
+    let lastViolationState = false; // to trigger email only on violation start
+    let lastViolationReason = "";
+    
     // DOM elements
     const tempValueDiv = document.getElementById('tempValue');
     const hrValueDiv = document.getElementById('hrValue');
@@ -320,67 +398,84 @@
     const tempGauge = document.getElementById('tempGauge');
     const hrGauge = document.getElementById('hrGauge');
     
-    // Helper: format time
     function formatTime(dateObj) {
         if(!dateObj) return '--:--:--';
         const d = new Date(dateObj);
         return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     }
-
-    // Show local notification if granted
+    
+    // Push notification helper
     function sendNotification(title, body, tag = 'clinical') {
         if (Notification.permission === 'granted') {
             new Notification(title, { body, icon: 'https://cdn-icons-png.flaticon.com/512/4228/4228704.png', tag });
         }
     }
-
-    // evaluate thresholds + update cards style & trends
+    
+    // Evaluate thresholds (NEW: temp safe 31-38°C, HR 60-100)
     function evaluateThresholds(temp, hr, alertFlagFromField) {
         let tempWarning = false;
         let hrWarning = false;
         let insightMsg = '';
-
-        // Temp thresholds (normal 36.1-37.8)
-        if (temp < 35.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Critical hypothermia'; insightMsg = 'Severe hypothermia risk'; }
-        else if (temp > 39.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Critical hyperthermia'; insightMsg = 'High fever, intervention needed'; }
-        else if (temp > 38.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Fever (elevated)'; insightMsg = 'Fever monitoring'; }
-        else if (temp < 36.0) { tempWarning = true; tempStatusSpan.innerText = '⚠️ Mild hypothermia'; insightMsg = 'Temperature below range'; }
-        else { tempStatusSpan.innerText = 'Normal range'; insightMsg = 'Vitals within standard limits'; }
-
-        // HR thresholds
-        if (hr > 130) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Severe tachycardia'; insightMsg = insightMsg || 'Tachycardia critical'; }
-        else if (hr > 110) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Tachycardia'; insightMsg = insightMsg || 'Elevated heart rate'; }
-        else if (hr < 50) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Bradycardia'; insightMsg = insightMsg || 'Low heart rate, monitor'; }
-        else if (hr < 60) { hrWarning = true; hrStatusSpan.innerText = '⚠️ Mild bradycardia'; insightMsg = insightMsg || 'Below normal pulse'; }
-        else { hrStatusSpan.innerText = 'Stable rhythm'; }
-
-        // Progress gauge (temp mapping 33-42°C -> 0-100%)
-        let tempPercent = Math.min(100, Math.max(0, ((temp - 33) / 9) * 100));
+        let violationReason = "";
+        
+        // Temperature check: 31-38°C normal
+        if (temp < 31.0) {
+            tempWarning = true;
+            tempStatusSpan.innerText = '❄️ HYPOTHERMIA (<31°C)';
+            insightMsg = 'Temperature below safe range (31-38°C)';
+            violationReason = "Temp too low";
+        } else if (temp > 38.0) {
+            tempWarning = true;
+            tempStatusSpan.innerText = '🔥 HYPERTHERMIA (>38°C)';
+            insightMsg = 'Temperature above safe range (31-38°C)';
+            violationReason = "Temp too high";
+        } else {
+            tempStatusSpan.innerText = 'Normal range (31-38°C) ✓';
+        }
+        
+        // Heart rate check: 60-100
+        if (hr < 60) {
+            hrWarning = true;
+            hrStatusSpan.innerText = hr < 50 ? '⚠️ SEVERE BRADYCARDIA (<60)' : '⚠️ BRADYCARDIA (<60 BPM)';
+            insightMsg = insightMsg || 'Heart rate below 60 BPM';
+            violationReason = violationReason ? "Temp & HR abnormal" : "HR too low";
+        } else if (hr > 100) {
+            hrWarning = true;
+            hrStatusSpan.innerText = hr > 130 ? '⚠️ SEVERE TACHYCARDIA (>100)' : '⚠️ TACHYCARDIA (>100 BPM)';
+            insightMsg = insightMsg || 'Heart rate above 100 BPM';
+            violationReason = violationReason ? "Temp & HR abnormal" : "HR too high";
+        } else {
+            hrStatusSpan.innerText = 'Stable rhythm (60-100 BPM) ✓';
+        }
+        
+        // Progress gauges: temp range 28-42°C visual
+        let tempPercent = Math.min(100, Math.max(0, ((temp - 28) / 14) * 100));
         tempGauge.style.width = `${tempPercent}%`;
-        let hrPercent = Math.min(100, Math.max(0, (hr / 180) * 100));
+        let hrPercent = Math.min(100, Math.max(0, (hr / 200) * 100));
         hrGauge.style.width = `${hrPercent}%`;
         
-        // color handling
         if (tempWarning) tempCard.classList.add('danger-glow'); else tempCard.classList.remove('danger-glow');
         if (hrWarning) hrCard.classList.add('danger-glow'); else hrCard.classList.remove('danger-glow');
         
-        // AI insight summary priority (override with alert flag)
-        if (alertFlagFromField === 1) insightMsg = '⚠️ SYSTEM CRITICAL: Immediate emergency response required!';
-        else if (tempWarning && hrWarning) insightMsg = '❗ Dual vital signs critical - STAT call';
-        else if (tempWarning) insightMsg = `Temperature abnormal: ${temp.toFixed(1)}°C`;
-        else if (hrWarning) insightMsg = `Heart rate abnormal: ${hr} BPM`;
-        else insightMsg = 'Stable – continuous monitoring';
+        // Final AI insight with alert flag priority
+        if (alertFlagFromField === 1) {
+            insightMsg = '🚨 CODE RED: Hardware alert flag (field3=1) — emergency protocol';
+            violationReason = "Hardware alert flag (field3=1)";
+        } else if (tempWarning && hrWarning) {
+            insightMsg = '⚡ DUAL CRITICAL: Temp & HR outside safe zones';
+        } else if (tempWarning) insightMsg = `🌡️ Temperature abnormal: ${temp.toFixed(1)}°C (safe 31-38)`;
+        else if (hrWarning) insightMsg = `💓 Heart rate abnormal: ${hr} BPM (safe 60-100)`;
+        else insightMsg = '✅ All vitals within safe ranges (Temp 31-38°C, HR 60-100)';
         
         aiInsightSpan.innerText = insightMsg;
-        
         const overallCritical = (tempWarning || hrWarning || alertFlagFromField === 1);
-        return { overallCritical, tempWarning, hrWarning };
+        return { overallCritical, tempWarning, hrWarning, violationReason: violationReason || insightMsg };
     }
-
-    // Update table with latest readings (max 5)
+    
+    // Update history table with thresholds
     function updateHistoryTable(feedsArray) {
         if (!feedsArray || feedsArray.length === 0) {
-            historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No historical data</td></tr>';
+            historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No data</td></tr>';
             return;
         }
         const latestFeeds = feedsArray.slice(-5).reverse();
@@ -388,25 +483,27 @@
         for (let feed of latestFeeds) {
             const timeStr = formatTime(feed.created_at);
             const t = feed.field1 ? parseFloat(feed.field1).toFixed(1) : '—';
-            const hr = feed.field2 ? parseInt(feed.field2) : '—';
+            const hrVal = feed.field2 ? parseInt(feed.field2) : '—';
             const alertFlag = feed.field3 ? parseInt(feed.field3) : 0;
-            const statusIcon = (alertFlag === 1) ? '<span class="badge bg-danger">CRITICAL</span>' : '<span class="badge bg-secondary">Normal</span>';
-            rowsHtml += `<tr><td class="small">${timeStr}</td><td>${t}</td><td>${hr}</td><td>${alertFlag === 1 ? '⚠️ Alert 1' : '—'}</td><td>${statusIcon}</td></tr>`;
+            let thresholdViolation = false;
+            if (t !== '—' && hrVal !== '—') {
+                const tempNum = parseFloat(t);
+                const hrNum = parseInt(hrVal);
+                if (tempNum < 31 || tempNum > 38 || hrNum < 60 || hrNum > 100) thresholdViolation = true;
+            }
+            const statusIcon = (alertFlag === 1 || thresholdViolation) ? '<span class="badge bg-danger">⚠️ CRITICAL</span>' : '<span class="badge bg-success">Normal</span>';
+            const alertDisplay = (alertFlag === 1) ? '🚨 Alert 1' : (thresholdViolation ? '⚠️ Range violation' : '—');
+            rowsHtml += `<tr><td class="small">${timeStr}</td><td>${t}</td><td>${hrVal}</td><td>${alertDisplay}</td><td>${statusIcon}</td></tr>`;
         }
         historyTableBody.innerHTML = rowsHtml;
     }
-
-    // Render/update chart with full dataset (last 20 feeds)
+    
     function updateChart(feedsList) {
         if (!feedsList || feedsList.length === 0) return;
         const sorted = [...feedsList].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-        const labels = sorted.map(f => {
-            const d = new Date(f.created_at);
-            return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-        });
+        const labels = sorted.map(f => { const d = new Date(f.created_at); return `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; });
         const tempData = sorted.map(f => f.field1 ? parseFloat(f.field1) : null);
         const hrData = sorted.map(f => f.field2 ? parseInt(f.field2) : null);
-        
         if (chartInstance) {
             chartInstance.data.labels = labels;
             chartInstance.data.datasets[0].data = tempData;
@@ -416,52 +513,20 @@
             const ctx = document.getElementById('vitalsChart').getContext('2d');
             chartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Temperature (°C)',
-                            data: tempData,
-                            borderColor: '#58a6ff',
-                            backgroundColor: 'rgba(88, 166, 255, 0.05)',
-                            borderWidth: 3,
-                            pointRadius: 3,
-                            pointBackgroundColor: '#7ab3e6',
-                            tension: 0.2,
-                            yAxisID: 'y',
-                        },
-                        {
-                            label: 'Heart Rate (BPM)',
-                            data: hrData,
-                            borderColor: '#ff7b72',
-                            backgroundColor: 'rgba(255, 90, 70, 0.02)',
-                            borderWidth: 3,
-                            pointRadius: 3,
-                            pointBackgroundColor: '#ff9f8f',
-                            tension: 0.2,
-                            yAxisID: 'y1',
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        tooltip: { mode: 'index', intersect: false, backgroundColor: '#0d1b2a' },
-                        legend: { labels: { color: '#cbd5e6', font: { size: 11 } }, position: 'top' },
-                    },
-                    scales: {
-                        y: { title: { display: true, text: 'Temperature °C', color: '#9bb7e0' }, grid: { color: '#1f2a3e' }, ticks: { color: '#b9d0f0' } },
-                        y1: { position: 'right', title: { display: true, text: 'Heart Rate (BPM)', color: '#ffaa99' }, grid: { drawOnChartArea: false }, ticks: { color: '#ffb7a8' } },
-                        x: { ticks: { color: '#a0bbdf', maxRotation: 30, autoSkip: true }, grid: { color: '#1f2a3e' } }
-                    }
-                }
+                data: { labels, datasets: [
+                    { label: 'Temperature (°C) | safe 31-38', data: tempData, borderColor: '#58a6ff', backgroundColor: 'rgba(88,166,255,0.05)', borderWidth: 3, pointRadius: 3, tension: 0.2, yAxisID: 'y' },
+                    { label: 'Heart Rate (BPM) | safe 60-100', data: hrData, borderColor: '#ff7b72', backgroundColor: 'rgba(255,90,70,0.02)', borderWidth: 3, pointRadius: 3, tension: 0.2, yAxisID: 'y1' }
+                ] },
+                options: { responsive: true, maintainAspectRatio: true, interaction: { mode: 'index', intersect: false },
+                    plugins: { tooltip: { mode: 'index', backgroundColor: '#0d1b2a' }, legend: { labels: { color: '#cbd5e6' } } },
+                    scales: { y: { title: { display: true, text: 'Temp °C', color: '#9bb7e0' }, grid: { color: '#1f2a3e' }, ticks: { color: '#b9d0f0' } },
+                              y1: { position: 'right', title: { display: true, text: 'HR (BPM)', color: '#ffaa99' }, grid: { drawOnChartArea: false }, ticks: { color: '#ffb7a8' } },
+                              x: { ticks: { color: '#a0bbdf', maxRotation: 30 }, grid: { color: '#1f2a3e' } } } }
             });
         }
     }
-
-    // main fetch data from ThingSpeak (feeds.json?results=20)
+    
+    // Main fetch
     async function fetchClinicalData() {
         try {
             const url = `${API_BASE}?results=20`;
@@ -470,71 +535,57 @@
             const data = await response.json();
             const feeds = data.feeds;
             if (!feeds || feeds.length === 0) throw new Error('No feeds');
-            
             const latest = feeds[feeds.length - 1];
-            const temp = latest.field1 ? parseFloat(latest.field1) : 0;
-            const hr = latest.field2 ? parseInt(latest.field2) : 0;
+            const temp = latest.field1 ? parseFloat(latest.field1) : 36.5;
+            const hr = latest.field2 ? parseInt(latest.field2) : 80;
             const alertFlag = latest.field3 ? parseInt(latest.field3) : 0;
             
-            // update numeric display
             tempValueDiv.innerText = temp.toFixed(1);
             hrValueDiv.innerText = hr;
-            // update last update timestamp
-            if (latest.created_at) lastUpdateSpan.innerText = formatTime(latest.created_at);
-            else lastUpdateSpan.innerText = new Date().toLocaleTimeString();
+            lastUpdateSpan.innerText = formatTime(latest.created_at) || new Date().toLocaleTimeString();
             
-            // evaluate thresholds + visual glow (alertFlag from field3 considered)
-            const { overallCritical } = evaluateThresholds(temp, hr, alertFlag);
+            const { overallCritical, violationReason } = evaluateThresholds(temp, hr, alertFlag);
             
-            // Emergency banner & notifications logic based on field3 or critical thresholds
-            let emergencyActive = (alertFlag === 1) || overallCritical;
+            const tempOut = (temp < 31 || temp > 38);
+            const hrOut = (hr < 60 || hr > 100);
+            const emergencyActive = (alertFlag === 1) || tempOut || hrOut;
+            
             if (emergencyActive) {
                 emergencyBanner.classList.remove('d-none');
-                if (alertFlag === 1) emergencyMsgSpan.innerText = `🚨 CODE RED: Alert field3 triggered | Temp ${temp.toFixed(1)}°C | HR ${hr} BPM`;
-                else emergencyMsgSpan.innerText = `⚠️ Critical thresholds exceeded: Temp ${temp.toFixed(1)}°C / HR ${hr} BPM – clinical review required`;
-                // update badge
+                if (alertFlag === 1) emergencyMsgSpan.innerText = `🚨 CODE RED: Alert field3 | Temp ${temp.toFixed(1)}°C | HR ${hr} BPM`;
+                else if (tempOut && hrOut) emergencyMsgSpan.innerText = `🔴 DUAL CRITICAL: Temp ${temp.toFixed(1)}°C (31-38) & HR ${hr} (60-100)`;
+                else if (tempOut) emergencyMsgSpan.innerText = `⚠️ TEMP CRITICAL: ${temp.toFixed(1)}°C outside [31-38°C]`;
+                else if (hrOut) emergencyMsgSpan.innerText = `⚠️ HR CRITICAL: ${hr} BPM outside [60-100]`;
                 alertFlagDisplay.innerHTML = '<span class="badge badge-critical"><i class="fas fa-skull-crosswalk"></i> EMERGENCY MODE ACTIVE</span>';
-                // trigger notifications only on state change
-                if (!lastEmergencyState) {
-                    if (Notification.permission === "granted") {
-                        sendNotification('🚨 HEALTH EYE ALERT', `Patient unstable: ${temp.toFixed(1)}°C, ${hr} BPM. Immediate attention.`);
-                    }
+                if (!lastEmergencyState && Notification.permission === "granted") {
+                    sendNotification('🚨 HEALTH EYE PRO ALERT', `Violation: ${violationReason}`, 'emergency');
+                }
+                // Trigger email on new violation (only when entering violation state)
+                if (!lastViolationState) {
+                    await sendThresholdAlertEmail(temp, hr, alertFlag, violationReason);
                 }
                 lastEmergencyState = true;
+                lastViolationState = true;
+                lastViolationReason = violationReason;
             } else {
                 emergencyBanner.classList.add('d-none');
-                alertFlagDisplay.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-check-circle"></i> Stable - No active emergency</span>';
+                alertFlagDisplay.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-check-circle"></i> Stable - All vitals within safe ranges (temp 31-38, HR 60-100)</span>';
                 lastEmergencyState = false;
+                lastViolationState = false;
             }
             
-            // Update history table and chart with full feeds
             updateHistoryTable(feeds);
             updateChart(feeds);
-            
-            // Additional alerts for thresholds crossing (single shot per crossing)
-            const thresholdCritical = (temp > 38.5 || temp < 35.0 || hr > 125 || hr < 48);
-            if (thresholdCritical && !lastThresholdAlertTrigger && !emergencyActive) {
-                if (Notification.permission === "granted") {
-                    sendNotification('Clinical threshold warning', `Vitals out of range: T=${temp.toFixed(1)}°C / HR=${hr} bpm`, 'threshold');
-                }
-                lastThresholdAlertTrigger = true;
-            } else if (!thresholdCritical) {
-                lastThresholdAlertTrigger = false;
-            }
-            
-            // update connection led & api health
             document.getElementById('apiHealthBadge').innerHTML = '<i class="fas fa-check-circle text-success"></i> Synced';
             document.getElementById('liveConnLed').style.background = '#2ea043';
         } catch (err) {
-            console.warn("ThingSpeak fetch error", err);
+            console.warn(err);
             document.getElementById('apiHealthBadge').innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Retrying';
             document.getElementById('liveConnLed').style.background = '#e3b341';
-            // keep previous values but show warning
-            aiInsightSpan.innerText = 'Network latency / awaiting data';
+            aiInsightSpan.innerText = 'Network error / reconnecting';
         }
     }
     
-    // countdown and cyclic refresh
     function startRefreshCycle() {
         if (refreshInterval) clearInterval(refreshInterval);
         if (countdownTimer) clearInterval(countdownTimer);
@@ -542,49 +593,32 @@
         countdownSpan.innerText = countdownValue;
         const updateCountdown = () => {
             countdownValue--;
-            if (countdownValue <= 0) {
-                countdownValue = 15;
-                fetchClinicalData();
-            }
+            if (countdownValue <= 0) { countdownValue = 15; fetchClinicalData(); }
             countdownSpan.innerText = countdownValue;
         };
         countdownTimer = setInterval(updateCountdown, 1000);
-        refreshInterval = setInterval(() => {
-            // extra sync: keep data fresh, but countdown triggers main fetch as well 
-            // avoid double, but countdown will call fetch anyway. So we just keep as backup: 
-        }, 15000);
-        fetchClinicalData(); // initial load
-    }
-    
-    // manual refresh
-    function manualRefresh() {
         fetchClinicalData();
-        countdownValue = 15;
-        countdownSpan.innerText = countdownValue;
-        if (Notification.permission !== "granted") console.log('manual refresh triggered');
     }
     
-    // request notification permission & button
+    function manualRefresh() { fetchClinicalData(); countdownValue = 15; countdownSpan.innerText = countdownValue; }
     function requestNotificationPerm() {
         if (Notification.permission !== 'granted') {
             Notification.requestPermission().then(perm => {
-                if (perm === 'granted') sendNotification('HEALTH EYE BY WALUMBE', 'Notifications active – you will receive critical alerts');
+                if (perm === 'granted') sendNotification('HEALTH EYE PRO', 'Notifications active → you will receive critical alerts');
             });
-        } else {
-            sendNotification('HEALTH EYE BY WALUMBE', 'Alerts already enabled');
-        }
+        } else sendNotification('HEALTH EYE PRO', 'Notifications already enabled');
+    }
+    async function testEmailNow() {
+        await sendThresholdAlertEmail(36.8, 98, 0, "Test email from HEALTH EYE dashboard");
     }
     
-    // initial chart placeholder, start timers, event listeners
     window.addEventListener('load', () => {
         startRefreshCycle();
         document.getElementById('manualRefreshBtn').addEventListener('click', manualRefresh);
         document.getElementById('alertPermBtn').addEventListener('click', requestNotificationPerm);
-        // pre-check notification permission
-        if (Notification.permission === 'default') {
-            // we don't annoy user, just set button visible.
-        }
+        document.getElementById('testEmailBtn').addEventListener('click', testEmailNow);
     });
 </script>
 </body>
 </html>
+```
